@@ -17,7 +17,7 @@ SIMULATOR:
   AUDIO:
     EVERLASTING: False
     RIR_SAMPLING_RATE: 16000
-    SOURCE_SOUND_DIR: "data/sounds/semantic_splits"
+    SOURCE_SOUND_DIR: "/nas/home/cmu_inavarro/data/sounds/semantic_splits"
 
 TASK:
   TYPE: SemanticAudioNav
@@ -40,8 +40,10 @@ TASK:
 
 DATASET:
   TYPE: "SemanticAudioNav"
-  SPLIT: "train"
+  SPLIT: "train_seen-scenes_heard-sounds"
+  # SPLIT: "train"
   CONTENT_SCENES: ["*"]
   VERSION: 'v1'
   SCENES_DIR: "data/scene_datasets/mp3d"
-  DATA_PATH: "data/datasets/semantic_audionav/mp3d/{version}/{split}/{split}.json.gz"
+  # DATA_PATH: "data/datasets/semantic_audionav/mp3d/{version}/{split}/{split}.json.gz"
+  DATA_PATH: "/nas/home/cmu_inavarro/data/datasets/semantic_avn/mp3d/{version}/{split}/{split}.json.gz"
