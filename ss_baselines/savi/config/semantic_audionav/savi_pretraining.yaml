@@ -62,6 +62,6 @@ RL:
     rnn_type: "GRU"
     num_recurrent_layers: 1
     backbone: "custom_resnet18"
-    pretrained_weights: ""
-    pretrained: False
+    pretrained_weights: "/data/ingridn/models/ckpt.379.pth"
+    pretrained: True
     reset_critic: False

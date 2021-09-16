@@ -24,4 +24,7 @@ git checkout tags/v0.1.7
 pip install -e .
 python setup.py develop --all
 
+cd ../sound-spaces
+pip install -e .
+
 

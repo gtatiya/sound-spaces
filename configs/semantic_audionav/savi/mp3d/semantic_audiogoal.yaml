@@ -40,7 +40,7 @@ TASK:
 
 DATASET:
   TYPE: "SemanticAudioNav"
-  SPLIT: "train_seen-scenes_heard-sounds"
+  SPLIT: "train"
   # SPLIT: "train"
   CONTENT_SCENES: ["*"]
   VERSION: 'v1'
