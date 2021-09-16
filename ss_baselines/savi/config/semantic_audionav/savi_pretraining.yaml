@@ -2,13 +2,13 @@ BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/savi/mp3d/semantic_audiogoal.y
 TRAINER_NAME: "ddppo"
 NUM_PROCESSES: 8
 SENSORS: ["DEPTH_SENSOR", "RGB_SENSOR"]
-NUM_UPDATES: 20000
+NUM_UPDATES: 120000
 LOG_INTERVAL: 10
-CHECKPOINT_INTERVAL: 50
+CHECKPOINT_INTERVAL: 250
 VIDEO_OPTION: []
 VISUALIZATION_OPTION: []
-SIMULATOR_GPU_ID: 1
-TORCH_GPU_ID: 1
+SIMULATOR_GPU_ID: 0
+TORCH_GPU_ID: 0
 
 EVAL:
   SPLIT: "val"
@@ -62,6 +62,6 @@ RL:
     rnn_type: "GRU"
     num_recurrent_layers: 1
     backbone: "custom_resnet18"
-    pretrained_weights: "/data/ingridn/models/ckpt.379.pth"
-    pretrained: True
+    pretrained_weights: ""
+    pretrained: False
     reset_critic: False
