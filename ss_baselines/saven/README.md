@@ -32,5 +32,11 @@ python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven.yaml --model-dir data/models/saven
 ```
 
+- Run the random baselines. There are two random baselines `RandomAgentWithoutStop` and `RandomAgentWithStop`. The former is random baseline that uniformly samples one of three actions (FORWARD, LEFT, RIGHT) and executes stop when the radius distance is less than the specified success distance. The latter samples one of four actions (FORWARD, LEFT, RIGHT, STOP) where STOP has a much lower probability of being selected. 
+```
+python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_wo-stop.yaml
+python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_w-stop.yaml
+```
+
 ## Notes 
  - Modify the parameter `NUM_UPDATES` in the configuration file according to the number of GPUs
