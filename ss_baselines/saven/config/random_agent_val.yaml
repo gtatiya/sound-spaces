@@ -5,13 +5,5 @@ EVAL:
     EPISODE_COUNT: 10
     EVAL_NONLEARNING: True
     NONLEARNING:
-        # RandomAgent or HandcraftedAgent
-        AGENT: RandomAgent
-
-INFERENCE:
-    SPLIT: val
-    PREDICTIONS_FILE: predictions.json
-    INFERENCE_NONLEARNING: True
-    NONLEARNING:
         # RandomAgent or UniformRandomAgent
-        AGENT: "RandomAgent"
+        AGENT: RandomAgent
