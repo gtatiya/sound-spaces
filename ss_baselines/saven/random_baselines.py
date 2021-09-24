@@ -1,5 +1,7 @@
 import json
 from collections import defaultdict
+from logging import Logger
+from pickle import STOP
 
 import numpy as np
 import habitat
@@ -30,44 +32,72 @@ def evaluate_agent(config: Config) -> None:
     env = Env(config=config.TASK_CONFIG)
 
     assert config.EVAL.NONLEARNING.AGENT in [
-        "RandomAgent",
-    ], "EVAL.NONLEARNING.AGENT must be either RandomAgent or UniformRandomAgent."
+        "RandomAgentWithoutStop", "RandomAgentWithStop"
+    ], "EVAL.NONLEARNING.AGENT must be either RandomAgentWithoutStop or RandomAgentWithStop."
 
-    if config.EVAL.NONLEARNING.AGENT == "RandomAgent":
-        agent = RandomAgent()
+    if config.EVAL.NONLEARNING.AGENT == "RandomAgentWithoutStop":
+        agent = RandomAgentWithoutStop()
     else:
-        agent = UniformRandomAgent()
+        agent = RandomAgentWithStop()
+
+    eps = 1e-5
+    stop_radius = config.TASK_CONFIG.TASK.SUCCESS.SUCCESS_DISTANCE + eps
+    
+    logger.info(f"Success radius: {stop_radius}")
 
     stats = defaultdict(float)
     num_episodes = min(config.EVAL.EPISODE_COUNT, len(env.episodes))
     for i in tqdm(range(num_episodes)):
         obs = env.reset()
-        print(f'observations:\n{obs}')
+        goal = np.array(env.current_episode.goals[0].position)
+        agent.reset()
+        actions = 0
         
-        break
-    #     agent.reset()
+        while not env.episode_over:
+            action = agent.act(obs)
+            actions += 1
+            obs = env.step(action)
+            curr_pos = np.array(env.sim.get_agent_state().position)
+            radius = np.linalg.norm(curr_pos-goal)
+            if radius <= stop_radius:
+                logger.info(f"agent stopped after {actions} actions and radius: {radius}")
+                obs = env.step(HabitatSimActions.STOP)
+                
+        for m, v in env.get_metrics().items():
+            stats[m] += v
 
-    #     while not env.episode_over:
-    #         action = agent.act(obs)
-    #         obs = env.step(action)
+    stats = {k: v / num_episodes for k, v in stats.items()}
+    
+    logger.info(f"Averaged benchmark for {config.EVAL.NONLEARNING.AGENT}:")
+    for stat_key in stats.keys():
+        logger.info("{}: {:.3f}".format(stat_key, stats[stat_key]))
 
-    #     for m, v in env.get_metrics().items():
-    #         stats[m] += v
+    with open(f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json", "w") as f:
+        json.dump(stats, f, indent=4)
 
-    # stats = {k: v / num_episodes for k, v in stats.items()}
+class RandomAgentWithoutStop(Agent):
+    def __init__(self, probs=None):
+        self.actions = [
+            HabitatSimActions.MOVE_FORWARD,
+            HabitatSimActions.TURN_LEFT,
+            HabitatSimActions.TURN_RIGHT,
+        ]
+        if probs is not None:
+            self.probs = probs
+        else:
+            self.probs = np.ones(shape=len(self.actions)) / len(self.actions)
+        
+        print(f"Random agent intialized with probs: {self.probs}")
 
-    # logger.info(f"Averaged benchmark for {config.EVAL.NONLEARNING.AGENT}:")
-    # for stat_key in stats.keys():
-    #     logger.info("{}: {:.3f}".format(stat_key, stats[stat_key]))
+    def reset(self):
+        pass
 
-    # with open(f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json", "w") as f:
-    #     json.dump(stats, f, indent=4)
-
-class RandomAgent(Agent):
-    r"""Selects an action at each time step by sampling from the oracle action
-    distribution of the training set.
-    """
-
+    def act(self, observations):
+        return {
+            "action": np.random.choice(self.actions, p=self.probs)
+        }
+        
+class RandomAgentWithStop(Agent):
     def __init__(self, probs=None):
         self.actions = [
             HabitatSimActions.STOP,
@@ -78,34 +108,14 @@ class RandomAgent(Agent):
         if probs is not None:
             self.probs = probs
         else:
-            self.probs = [0.02, 0.68, 0.15, 0.15]
+            self.probs = [0.001, 0.333, 0.333, 0.333]
+        
+        print(f"Random agent intialized with probs: {self.probs}")
 
     def reset(self):
         pass
 
     def act(self, observations):
-        return {"action": np.random.choice(self.actions, p=self.probs)}
-
-
-class UniformRandomAgent(Agent):
-    r"""Selects an action at each time step by sampling from the oracle action
-    distribution of the training set.
-    """
-
-    def __init__(self, probs=None):
-        self.actions = [
-            HabitatSimActions.STOP,
-            HabitatSimActions.MOVE_FORWARD,
-            HabitatSimActions.TURN_LEFT,
-            HabitatSimActions.TURN_RIGHT,
-        ]
-        if probs is not None:
-            self.probs = probs
-        else:
-            self.probs = [0.02, 0.68, 0.15, 0.15]
-
-    def reset(self):
-        pass
-
-    def act(self, observations):
-        return {"action": np.random.choice(self.actions, p=self.probs)}
+        return {
+            "action": np.random.choice(self.actions, p=self.probs)
+        }

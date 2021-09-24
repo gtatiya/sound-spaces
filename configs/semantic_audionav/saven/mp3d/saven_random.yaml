@@ -11,7 +11,7 @@ SIMULATOR:
     WIDTH: 128
     HEIGHT: 128
 
-  TYPE: "SoundSpacesSim"
+  TYPE: "SpacesSim"
   ACTION_SPACE_CONFIG: "v0"
   SCENE_DATASET: "mp3d"
   GRID_SIZE: 1.0
@@ -38,6 +38,8 @@ TASK:
     'SUCCESS_WEIGHTED_BY_NUM_ACTION', 
     'SUCCESS_WHEN_SILENT'
   ]
+  SUCCESS:
+    SUCCESS_DISTANCE: 1.0
   SPL:
     TYPE: SPL
   TOP_DOWN_MAP:
@@ -50,7 +52,9 @@ TASK:
 DATASET:
   TYPE: "SemanticAudioNav"
   SPLIT: "train_seen-scenes_heard-sounds"
+  # SPLIT: "train"
   CONTENT_SCENES: ["*"]
   VERSION: 'v1'
   SCENES_DIR: "data/scene_datasets/mp3d"
+  # DATA_PATH: "data/datasets/semantic_audionav/mp3d/{version}/{split}/{split}.json.gz"
   DATA_PATH: "data/datasets/semantic_aven/mp3d/{version}/{split}/{split}.json.gz"
