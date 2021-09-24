@@ -61,7 +61,8 @@ def evaluate_agent(config: Config) -> None:
                 radius = np.linalg.norm(curr_pos-goal)
                 if radius <= stop_radius:
                     logger.info(f"agent stopped after {actions} actions and radius: {radius}")
-                    obs = env.step(HabitatSimActions.STOP)
+                    if not env.episode_over:
+                        obs = env.step(HabitatSimActions.STOP)
                     
             for m, v in env.get_metrics().items():
                 stats[m] += v
