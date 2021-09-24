@@ -163,8 +163,6 @@ class SoundSpacesSim(Simulator, ABC):
             self._sim = DummySimulator()
             with open(self.current_scene_observation_file, 'rb') as fo:
                 self._frame_cache = pickle.load(fo)
-        if self.config.USE_RANDOM:
-            self._sim = DummySimulator()
         else:
             self._sim = habitat_sim.Simulator(config=self.sim_config)
 
