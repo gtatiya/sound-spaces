@@ -19,7 +19,7 @@ import torch
 from ss_baselines.common.baseline_registry import baseline_registry
 from ss_baselines.saven.config.default import get_config
 from ss_baselines.saven.ppo.policy import AudioNavSMTNet
-
+from ss_baselines.saven.random_baselines import evaluate_agent
 
 def main():
     parser = argparse.ArgumentParser()
@@ -79,7 +79,8 @@ def main():
         help="Modify config options from command line"
     )
     args = parser.parse_args()
-
+    
+    
     # repo = git.Repo(search_parent_directories=True)
     # logging.info('Current git head hash code: {}'.format(repo.head.object.hexsha))
     if not os.path.exists(args.model_dir):
@@ -93,6 +94,11 @@ def main():
 
     # run exp
     config = get_config(args.exp_config, args.opts, args.model_dir, args.run_type, args.overwrite)
+    
+    if args.run_type == "eval" and config.EVAL.EVAL_NONLEARNING:
+        evaluate_agent(config)
+        return
+    
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
     assert trainer_init is not None, f"{config.TRAINER_NAME} is not supported"
     trainer = trainer_init(config)

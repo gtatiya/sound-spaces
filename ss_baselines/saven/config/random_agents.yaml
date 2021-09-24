@@ -1,0 +1,17 @@
+BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/saven_random.yaml"
+EVAL:
+    SPLIT: val
+    # any num greater than the actual episode count evals every episode
+    EPISODE_COUNT: 10
+    EVAL_NONLEARNING: True
+    NONLEARNING:
+        # RandomAgent or HandcraftedAgent
+        AGENT: RandomAgent
+
+INFERENCE:
+    SPLIT: val
+    PREDICTIONS_FILE: predictions.json
+    INFERENCE_NONLEARNING: True
+    NONLEARNING:
+        # RandomAgent or UniformRandomAgent
+        AGENT: "RandomAgent"
