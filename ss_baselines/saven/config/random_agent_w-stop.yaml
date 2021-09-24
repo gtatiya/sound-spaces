@@ -1,8 +1,12 @@
 BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/saven_random.yaml"
 EVAL:
-    SPLIT: val
+    SPLITS: [
+        test_unseen-scenes_unheard-sounds, 
+        test_unseen-scenes_heard-sounds
+        test_seen-scenes_unheard-sounds, 
+    ]
     # any num greater than the actual episode count evals every episode
-    EPISODE_COUNT: 1000
+    EPISODE_COUNT: 100000
     EVAL_NONLEARNING: True
     
     NONLEARNING:

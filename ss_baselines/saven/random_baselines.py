@@ -18,62 +18,62 @@ from habitat import Config, Dataset
 from ss_baselines.common.environments import SAVENInferenceEnv
 
 def evaluate_agent(config: Config) -> None:
-    split = config.EVAL.SPLIT
+    splits = config.EVAL.SPLITS
     
-    config.defrost()
-    
-    # turn off RGBD rendering as the random agents dont use it
-    config.TASK_CONFIG.SIMULATOR.AGENT_0.SENSORS = []
-    config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.SHUFFLE = False
-    config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = -1
-    config.TASK_CONFIG.DATASET.SPLIT = split
-    config.freeze()
-    
-    env = Env(config=config.TASK_CONFIG)
-
-    assert config.EVAL.NONLEARNING.AGENT in [
-        "RandomAgentWithoutStop", "RandomAgentWithStop"
-    ], "EVAL.NONLEARNING.AGENT must be either RandomAgentWithoutStop or RandomAgentWithStop."
-
-    if config.EVAL.NONLEARNING.AGENT == "RandomAgentWithoutStop":
-        agent = RandomAgentWithoutStop()
-    else:
-        agent = RandomAgentWithStop()
-
-    eps = 1e-5
-    stop_radius = config.TASK_CONFIG.TASK.SUCCESS.SUCCESS_DISTANCE + eps
-    
-    logger.info(f"Success radius: {stop_radius}")
-
-    stats = defaultdict(float)
-    num_episodes = min(config.EVAL.EPISODE_COUNT, len(env.episodes))
-    for i in tqdm(range(num_episodes)):
-        obs = env.reset()
-        goal = np.array(env.current_episode.goals[0].position)
-        agent.reset()
-        actions = 0
+    for split in splits:
+        config.defrost()
+        # turn off RGBD rendering as the random agents dont use it
+        config.TASK_CONFIG.SIMULATOR.AGENT_0.SENSORS = []
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.SHUFFLE = False
+        config.TASK_CONFIG.ENVIRONMENT.ITERATOR_OPTIONS.MAX_SCENE_REPEAT_STEPS = -1
+        config.TASK_CONFIG.DATASET.SPLIT = split
+        config.freeze()
         
-        while not env.episode_over:
-            action = agent.act(obs)
-            actions += 1
-            obs = env.step(action)
-            curr_pos = np.array(env.sim.get_agent_state().position)
-            radius = np.linalg.norm(curr_pos-goal)
-            if radius <= stop_radius:
-                logger.info(f"agent stopped after {actions} actions and radius: {radius}")
-                obs = env.step(HabitatSimActions.STOP)
-                
-        for m, v in env.get_metrics().items():
-            stats[m] += v
+        env = Env(config=config.TASK_CONFIG)
 
-    stats = {k: v / num_episodes for k, v in stats.items()}
-    
-    logger.info(f"Averaged benchmark for {config.EVAL.NONLEARNING.AGENT}:")
-    for stat_key in stats.keys():
-        logger.info("{}: {:.3f}".format(stat_key, stats[stat_key]))
+        assert config.EVAL.NONLEARNING.AGENT in [
+            "RandomAgentWithoutStop", "RandomAgentWithStop"
+        ], "EVAL.NONLEARNING.AGENT must be either RandomAgentWithoutStop or RandomAgentWithStop."
 
-    with open(f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json", "w") as f:
-        json.dump(stats, f, indent=4)
+        if config.EVAL.NONLEARNING.AGENT == "RandomAgentWithoutStop":
+            agent = RandomAgentWithoutStop()
+        else:
+            agent = RandomAgentWithStop()
+
+        eps = 1e-5
+        stop_radius = config.TASK_CONFIG.TASK.SUCCESS.SUCCESS_DISTANCE + eps
+        
+        logger.info(f"Success radius: {stop_radius}")
+
+        stats = defaultdict(float)
+        num_episodes = min(config.EVAL.EPISODE_COUNT, len(env.episodes))
+        for i in tqdm(range(num_episodes)):
+            obs = env.reset()
+            goal = np.array(env.current_episode.goals[0].position)
+            agent.reset()
+            actions = 0
+            
+            while not env.episode_over:
+                action = agent.act(obs)
+                actions += 1
+                obs = env.step(action)
+                curr_pos = np.array(env.sim.get_agent_state().position)
+                radius = np.linalg.norm(curr_pos-goal)
+                if radius <= stop_radius:
+                    logger.info(f"agent stopped after {actions} actions and radius: {radius}")
+                    obs = env.step(HabitatSimActions.STOP)
+                    
+            for m, v in env.get_metrics().items():
+                stats[m] += v
+
+        stats = {k: v / num_episodes for k, v in stats.items()}
+        
+        logger.info(f"Averaged benchmark for {config.EVAL.NONLEARNING.AGENT}:")
+        for stat_key in stats.keys():
+            logger.info("{}: {:.3f}".format(stat_key, stats[stat_key]))
+
+        with open(f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json", "w") as f:
+            json.dump(stats, f, indent=4)
 
 class RandomAgentWithoutStop(Agent):
     def __init__(self, probs=None):
