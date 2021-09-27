@@ -117,6 +117,8 @@ class PPOTrainer(BaseRLTrainer):
         """
         return torch.load(checkpoint_path, *args, **kwargs)
     
+    METRICS_BLACKLIST = {"top_down_map", "collisions.is_collision"}
+    
     @classmethod
     def _extract_scalars_from_info(
         cls, info: Dict[str, Any]
@@ -393,9 +395,18 @@ class PPOTrainer(BaseRLTrainer):
                 # this reward is averaged over all the episodes happened during window_size updates
                 # approximately number of steps is window_size * num_steps
                 if update % 10 == 0:
-                    writer.add_scalar("Environment/Reward", deltas["reward"] / deltas["count"], count_steps)
-                    writer.add_scalar("Environment/SPL", deltas["spl"] / deltas["count"], count_steps)
-                    writer.add_scalar("Environment/Episode_length", deltas["step"] / deltas["count"], count_steps)
+                    metrics = {
+                        k: v / deltas["count"]
+                        for k, v in deltas.items()
+                        if k not in {"reward", "count"}
+                    }
+                    if len(metrics) > 0:
+                        for metric, value in metrics.items():
+                            writer.add_scalar(f"Metrics/{metric}", value, count_steps)
+                            
+                    writer.add_scalar("Metrics/Reward", deltas["reward"] / deltas["count"], count_steps)
+                    # writer.add_scalar("Environment/SPL", deltas["spl"] / deltas["count"], count_steps)
+                    # writer.add_scalar("Environment/Episode_length", deltas["step"] / deltas["count"], count_steps)
                     writer.add_scalar('Policy/Value_Loss', value_loss, count_steps)
                     writer.add_scalar('Policy/Action_Loss', action_loss, count_steps)
                     writer.add_scalar('Policy/Entropy', dist_entropy, count_steps)
