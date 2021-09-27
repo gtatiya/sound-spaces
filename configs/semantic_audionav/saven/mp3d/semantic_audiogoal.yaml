@@ -17,7 +17,7 @@ SIMULATOR:
   AUDIO:
     EVERLASTING: False
     RIR_SAMPLING_RATE: 16000
-    SOURCE_SOUND_DIR: "data/sounds/semantic_splits"
+    SOURCE_SOUND_DIR: "data"
 
 TASK:
   TYPE: SemanticAudioNav

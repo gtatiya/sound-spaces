@@ -1,21 +1,15 @@
 import json
-from collections import defaultdict
-from logging import Logger
-from pickle import STOP
-
+import os
 import numpy as np
-import habitat
-from habitat_baselines.common.baseline_registry import baseline_registry
-from typing import Optional
 
+from collections import defaultdict
 from habitat import Env, logger
 from habitat.config.default import Config
 from habitat.core.agent import Agent
 from habitat.sims.habitat_simulator.actions import HabitatSimActions
 from tqdm import tqdm
 
-from habitat import Config, Dataset
-from ss_baselines.common.environments import SAVENInferenceEnv
+from habitat import Config
 
 def evaluate_agent(config: Config) -> None:
     splits = config.EVAL.SPLITS
@@ -73,7 +67,9 @@ def evaluate_agent(config: Config) -> None:
         for stat_key in stats.keys():
             logger.info("{}: {:.3f}".format(stat_key, stats[stat_key]))
 
-        with open(f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json", "w") as f:
+        stats_file = os.path.join(
+            config.MODEL_DIR, f"stats_{config.EVAL.NONLEARNING.AGENT}_{split}.json")
+        with open(stats_file, "w") as f:
             json.dump(stats, f, indent=4)
 
 class RandomAgentWithoutStop(Agent):

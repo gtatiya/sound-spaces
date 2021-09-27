@@ -115,28 +115,3 @@ class AudioNavRLEnv(habitat.RLEnv):
     # for data collection
     def get_current_episode_id(self):
         return self.habitat_env.current_episode.episode_id
-    
-class SAVENInferenceEnv(habitat.RLEnv):
-    def __init__(self, config: Config, dataset: Optional[Dataset] = None):
-        super().__init__(config.TASK_CONFIG, dataset)
-
-    def get_reward_range(self):
-        return (0.0, 0.0)
-
-    def get_reward(self, observations):
-        return 0.0
-
-    def get_done(self, observations):
-        return self._env.episode_over
-
-    def get_info(self, observations):
-        agent_state = self._env.sim.get_agent_state()
-        heading_vector = quaternion_rotate_vector(
-            agent_state.rotation.inverse(), np.array([0, 0, -1])
-        )
-        heading = cartesian_to_polar(-heading_vector[2], heading_vector[0])[1]
-        return {
-            "position": agent_state.position.tolist(),
-            "heading": heading,
-            "stop": self._env.task.is_stop_called,
-        }
