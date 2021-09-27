@@ -35,7 +35,8 @@ from ss_baselines.common.utils import (
     plot_top_down_map,
     resize_observation
 )
-from ss_baselines.av_nav.ppo.policy import AudioNavBaselinePolicy
+from ss_baselines.saven.ppo.policy import AudioNavSMTPolicy, AudioNavBaselinePolicy
+# from ss_baselines.av_nav.ppo.policy import AudioNavBaselinePolicy
 from ss_baselines.av_nav.ppo.ppo import PPO
 
 
@@ -65,13 +66,15 @@ class PPOTrainer(BaseRLTrainer):
 
         if observation_space is None:
             observation_space = self.envs.observation_spaces[0]
+            
         self.actor_critic = AudioNavBaselinePolicy(
-            observation_space=observation_space,
-            action_space=self.envs.action_spaces[0],
-            hidden_size=ppo_cfg.hidden_size,
-            goal_sensor_uuid=self.config.TASK_CONFIG.TASK.GOAL_SENSOR_UUID,
-            extra_rgb=self.config.EXTRA_RGB
-        )
+                observation_space=self.envs.observation_spaces[0],
+                action_space=self.action_space,
+                hidden_size=ppo_cfg.hidden_size,
+                goal_sensor_uuid=self.config.TASK_CONFIG.TASK.GOAL_SENSOR_UUID,
+                extra_rgb=self.config.EXTRA_RGB,
+                use_mlp_state_encoder=ppo_cfg.use_mlp_state_encoder
+            )
         self.actor_critic.to(self.device)
 
         self.agent = PPO(
