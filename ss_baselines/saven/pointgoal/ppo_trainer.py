@@ -116,6 +116,32 @@ class PPOTrainer(BaseRLTrainer):
             dict containing checkpoint info
         """
         return torch.load(checkpoint_path, *args, **kwargs)
+    
+    @classmethod
+    def _extract_scalars_from_info(
+        cls, info: Dict[str, Any]
+    ) -> Dict[str, float]:
+        result = {}
+        for k, v in info.items():
+            if k in cls.METRICS_BLACKLIST:
+                continue
+
+            if isinstance(v, dict):
+                result.update(
+                    {
+                        k + "." + subk: subv
+                        for subk, subv in cls._extract_scalars_from_info(
+                            v
+                        ).items()
+                        if (k + "." + subk) not in cls.METRICS_BLACKLIST
+                    }
+                )
+            # Things that are scalar-like will have an np.size of 1.
+            # Strings also have an np.size of 1, so explicitly ban those
+            elif np.size(v) == 1 and not isinstance(v, str):
+                result[k] = float(v)
+
+        return result
 
     @classmethod
     def _extract_scalars_from_infos(
@@ -294,15 +320,14 @@ class PPOTrainer(BaseRLTrainer):
         observations = None
 
         # episode_rewards and episode_counts accumulates over the entire training course
-        current_episode_reward = torch.zeros(self.envs.num_envs, 1)
         current_episode_step = torch.zeros(self.envs.num_envs, 1)
         
         current_episode_reward = torch.zeros(
-            self.envs.num_envs, 1, device=self.device
+            self.envs.num_envs, 1
         )
         running_episode_stats = dict(
-            count=torch.zeros(self.envs.num_envs, 1, device=self.device),
-            reward=torch.zeros(self.envs.num_envs, 1, device=self.device),
+            count=torch.zeros(self.envs.num_envs, 1),
+            reward=torch.zeros(self.envs.num_envs, 1),
         )
         window_episode_stats = defaultdict(
             lambda: deque(maxlen=ppo_cfg.reward_window_size)
