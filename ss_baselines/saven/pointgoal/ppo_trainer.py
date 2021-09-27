@@ -9,8 +9,8 @@
 import os
 import time
 import logging
-from collections import deque
-from typing import Dict, List
+from collections import deque, defaultdict
+from typing import Dict, List, Any
 import json
 import random
 
@@ -71,8 +71,7 @@ class PPOTrainer(BaseRLTrainer):
                 action_space=self.envs.action_spaces[0],
                 hidden_size=ppo_cfg.hidden_size,
                 goal_sensor_uuid=self.config.TASK_CONFIG.TASK.GOAL_SENSOR_UUID,
-                extra_rgb=self.config.EXTRA_RGB,
-                use_mlp_state_encoder=ppo_cfg.use_mlp_state_encoder
+                extra_rgb=self.config.EXTRA_RGB
             )
         self.actor_critic.to(self.device)
 
@@ -118,9 +117,22 @@ class PPOTrainer(BaseRLTrainer):
         """
         return torch.load(checkpoint_path, *args, **kwargs)
 
+    @classmethod
+    def _extract_scalars_from_infos(
+        cls, infos: List[Dict[str, Any]]
+    ) -> Dict[str, List[float]]:
+
+        results = defaultdict(list)
+        for i in range(len(infos)):
+            for k, v in cls._extract_scalars_from_info(infos[i]).items():
+                results[k].append(v)
+
+        return results
+
+
     def _collect_rollout_step(
-        self, rollouts, current_episode_reward, current_episode_step, episode_rewards,
-            episode_spls, episode_counts, episode_steps
+        self, rollouts, current_episode_reward, current_episode_step, 
+        running_episode_stats
     ):
         pth_time = 0.0
         env_time = 0.0
@@ -166,16 +178,25 @@ class PPOTrainer(BaseRLTrainer):
             [[info['spl']] for info in infos]
         )
 
-        current_episode_reward += rewards
-        current_episode_step += 1
         # current_episode_reward is accumulating rewards across multiple updates,
         # as long as the current episode is not finished
         # the current episode reward is added to the episode rewards only if the current episode is done
         # the episode count will also increase by 1
-        episode_rewards += (1 - masks) * current_episode_reward
-        episode_spls += (1 - masks) * spls
-        episode_steps += (1 - masks) * current_episode_step
-        episode_counts += 1 - masks
+        current_episode_reward += rewards
+        current_episode_step += 1
+        running_episode_stats["reward"] += (1 - masks) * current_episode_reward
+        running_episode_stats["count"] += 1 - masks
+        for k, v in self._extract_scalars_from_infos(infos).items():
+            v = torch.tensor(
+                v, dtype=torch.float, device=current_episode_reward.device
+            ).unsqueeze(1)
+            if k not in running_episode_stats:
+                running_episode_stats[k] = torch.zeros_like(
+                    running_episode_stats["count"]
+                )
+
+            running_episode_stats[k] += (1 - masks) * v
+            
         current_episode_reward *= masks
         current_episode_step *= masks
 
@@ -273,16 +294,19 @@ class PPOTrainer(BaseRLTrainer):
         observations = None
 
         # episode_rewards and episode_counts accumulates over the entire training course
-        episode_rewards = torch.zeros(self.envs.num_envs, 1)
-        episode_spls = torch.zeros(self.envs.num_envs, 1)
-        episode_steps = torch.zeros(self.envs.num_envs, 1)
-        episode_counts = torch.zeros(self.envs.num_envs, 1)
         current_episode_reward = torch.zeros(self.envs.num_envs, 1)
         current_episode_step = torch.zeros(self.envs.num_envs, 1)
-        window_episode_reward = deque(maxlen=ppo_cfg.reward_window_size)
-        window_episode_spl = deque(maxlen=ppo_cfg.reward_window_size)
-        window_episode_step = deque(maxlen=ppo_cfg.reward_window_size)
-        window_episode_counts = deque(maxlen=ppo_cfg.reward_window_size)
+        
+        current_episode_reward = torch.zeros(
+            self.envs.num_envs, 1, device=self.device
+        )
+        running_episode_stats = dict(
+            count=torch.zeros(self.envs.num_envs, 1, device=self.device),
+            reward=torch.zeros(self.envs.num_envs, 1, device=self.device),
+        )
+        window_episode_stats = defaultdict(
+            lambda: deque(maxlen=ppo_cfg.reward_window_size)
+        )
 
         t_start = time.time()
         env_time = 0
@@ -312,10 +336,7 @@ class PPOTrainer(BaseRLTrainer):
                         rollouts,
                         current_episode_reward,
                         current_episode_step,
-                        episode_rewards,
-                        episode_spls,
-                        episode_counts,
-                        episode_steps
+                        running_episode_stats
                     )
                     pth_time += delta_pth_time
                     env_time += delta_env_time
@@ -326,23 +347,21 @@ class PPOTrainer(BaseRLTrainer):
                 )
                 pth_time += delta_pth_time
 
-                window_episode_reward.append(episode_rewards.clone())
-                window_episode_spl.append(episode_spls.clone())
-                window_episode_step.append(episode_steps.clone())
-                window_episode_counts.append(episode_counts.clone())
-
                 losses = [value_loss, action_loss, dist_entropy]
-                stats = zip(
-                    ["count", "reward", "step", 'spl'],
-                    [window_episode_counts, window_episode_reward, window_episode_step, window_episode_spl],
+                stats_ordering = list(sorted(running_episode_stats.keys()))
+                stats = torch.stack(
+                    [running_episode_stats[k] for k in stats_ordering], 0
                 )
+                for i, k in enumerate(stats_ordering):
+                    window_episode_stats[k].append(stats[i].clone())
+                
                 deltas = {
                     k: (
                         (v[-1] - v[0]).sum().item()
                         if len(v) > 1
                         else v[0].sum().item()
                     )
-                    for k, v in stats
+                    for k, v in window_episode_stats.items()
                 }
                 deltas["count"] = max(deltas["count"], 1.0)
 
@@ -372,22 +391,16 @@ class PPOTrainer(BaseRLTrainer):
                         )
                     )
 
-                    window_rewards = (
-                        window_episode_reward[-1] - window_episode_reward[0]
-                    ).sum()
-                    window_counts = (
-                        window_episode_counts[-1] - window_episode_counts[0]
-                    ).sum()
-
-                    if window_counts > 0:
-                        logger.info(
-                            "Average window size {} reward: {:3f}".format(
-                                len(window_episode_reward),
-                                (window_rewards / window_counts).item(),
+                    logger.info(
+                            "Average window size: {}  {}".format(
+                                len(window_episode_stats["count"]),
+                                "  ".join(
+                                    "{}: {:.3f}".format(k, v / deltas["count"])
+                                    for k, v in deltas.items()
+                                    if k != "count"
+                                ),
                             )
                         )
-                    else:
-                        logger.info("No episodes finish in current window")
 
                 # checkpoint model
                 if update % self.config.CHECKPOINT_INTERVAL == 0:
