@@ -46,39 +46,44 @@ class Policy(nn.Module):
         rnn_hidden_states,
         prev_actions,
         masks,
+        ext_memory,
+        ext_memory_masks,
         deterministic=False,
     ):
-        features, rnn_hidden_states = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
+        features, rnn_hidden_states, ext_memory_feats = self.net(
+            observations, rnn_hidden_states, prev_actions, masks, ext_memory, ext_memory_masks
         )
-        # print('Features: ', features.cpu().numpy())
         distribution = self.action_distribution(features)
-        # print('Distribution: ', distribution.logits.cpu().numpy())
         value = self.critic(features)
-        # print('Value: ', value.item())
 
         if deterministic:
             action = distribution.mode()
-            # print('Deterministic action: ', action.item())
         else:
             action = distribution.sample()
-            # print('Sample action: ', action.item())
 
         action_log_probs = distribution.log_probs(action)
 
-        return value, action, action_log_probs, rnn_hidden_states
+        return value, action, action_log_probs, rnn_hidden_states, ext_memory_feats
 
-    def get_value(self, observations, rnn_hidden_states, prev_actions, masks):
-        features, _ = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
+    def get_value(self, observations, rnn_hidden_states, prev_actions, masks, ext_memory, ext_memory_masks):
+        features, _, _ = self.net(
+            observations, rnn_hidden_states, prev_actions, masks, ext_memory, ext_memory_masks
         )
         return self.critic(features)
 
     def evaluate_actions(
-        self, observations, rnn_hidden_states, prev_actions, masks, action
+        self,
+        observations,
+        rnn_hidden_states,
+        prev_actions,
+        masks,
+        action,
+        ext_memory,
+        ext_memory_masks,
     ):
-        features, rnn_hidden_states = self.net(
-            observations, rnn_hidden_states, prev_actions, masks
+        features, rnn_hidden_states, ext_memory_feats = self.net(
+            observations, rnn_hidden_states, prev_actions,
+            masks, ext_memory, ext_memory_masks
         )
         distribution = self.action_distribution(features)
         value = self.critic(features)
@@ -86,7 +91,7 @@ class Policy(nn.Module):
         action_log_probs = distribution.log_probs(action)
         distribution_entropy = distribution.entropy().mean()
 
-        return value, action_log_probs, distribution_entropy, rnn_hidden_states
+        return value, action_log_probs, distribution_entropy, rnn_hidden_states, ext_memory_feats
 
 
 class CriticHead(nn.Module):
@@ -107,17 +112,33 @@ class AudioNavBaselinePolicy(Policy):
         action_space,
         goal_sensor_uuid,
         hidden_size=512,
-        extra_rgb=False
+        extra_rgb=False,
+        use_mlp_state_encoder=False
     ):
         super().__init__(
             AudioNavBaselineNet(
                 observation_space=observation_space,
                 hidden_size=hidden_size,
                 goal_sensor_uuid=goal_sensor_uuid,
-                extra_rgb=extra_rgb
+                extra_rgb=extra_rgb,
+                use_mlp_state_encoder=use_mlp_state_encoder
             ),
             action_space.n,
         )
+
+
+class AudioNavSMTPolicy(Policy):
+    def __init__(self, observation_space, action_space, hidden_size=128, **kwargs):
+        super().__init__(
+            AudioNavSMTNet(
+                observation_space,
+                action_space,
+                hidden_size=hidden_size,
+                **kwargs
+            ),
+            action_space.n
+        )
+
 
 class Net(nn.Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
@@ -138,6 +159,7 @@ class Net(nn.Module, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def is_blind(self):
         pass
+
 
 class AudioNavBaselineNet(Net):
     r"""Network which passes the input image through CNN and concatenates

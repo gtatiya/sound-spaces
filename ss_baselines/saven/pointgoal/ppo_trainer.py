@@ -35,8 +35,7 @@ from ss_baselines.common.utils import (
     plot_top_down_map,
     resize_observation
 )
-from ss_baselines.saven.ppo.policy import AudioNavSMTPolicy, AudioNavBaselinePolicy
-# from ss_baselines.av_nav.ppo.policy import AudioNavBaselinePolicy
+from ss_baselines.saven.pointgoal.policy import Seq2SeqPolicy
 from ss_baselines.av_nav.ppo.ppo import PPO
 
 
@@ -67,7 +66,7 @@ class PPOTrainer(BaseRLTrainer):
         if observation_space is None:
             observation_space = self.envs.observation_spaces[0]
             
-        self.actor_critic = AudioNavBaselinePolicy(
+        self.actor_critic = Seq2SeqPolicy(
                 observation_space=self.envs.observation_spaces[0],
                 action_space=self.envs.action_spaces[0],
                 hidden_size=ppo_cfg.hidden_size,
