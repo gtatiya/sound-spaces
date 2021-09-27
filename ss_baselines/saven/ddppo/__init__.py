@@ -5,3 +5,4 @@
 # LICENSE file in the root directory of this source tree.
 
 from ss_baselines.saven.ddppo.algo import DDPPOTrainer
+from ss_baselines.saven.pointgoal.ppo_trainer import PPOTrainer
