@@ -1,6 +1,6 @@
-BASE_TASK_CONFIG_PATH: "configs/audionav/av_nav/mp3d/pointgoal.yaml"
+BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/pointgoal.yaml"
 TRAINER_NAME: "pointgoal_ppo"
-NUM_PROCESSES: 10
+NUM_PROCESSES: 4
 SENSORS: ["RGB_SENSOR", "DEPTH_SENSOR"]
 NUM_UPDATES: 40000
 LOG_INTERVAL: 10

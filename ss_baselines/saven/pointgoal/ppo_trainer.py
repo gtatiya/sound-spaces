@@ -69,7 +69,7 @@ class PPOTrainer(BaseRLTrainer):
             
         self.actor_critic = AudioNavBaselinePolicy(
                 observation_space=self.envs.observation_spaces[0],
-                action_space=self.action_space,
+                action_space=self.envs.action_spaces[0],
                 hidden_size=ppo_cfg.hidden_size,
                 goal_sensor_uuid=self.config.TASK_CONFIG.TASK.GOAL_SENSOR_UUID,
                 extra_rgb=self.config.EXTRA_RGB,
