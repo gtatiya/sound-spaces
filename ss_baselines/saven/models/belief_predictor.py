@@ -95,6 +95,7 @@ class BeliefPredictor(nn.Module):
             output_size = self.num_objects + self.num_regions
             num_ftrs = self.classifier.fc.in_features
             self.classifier.fc = nn.Linear(num_ftrs, output_size)
+            self.sigmoid = nn.Sigmoid()
 
         self.last_pointgoal = [None] * num_env
         self.last_label = [None] * num_env
@@ -152,6 +153,16 @@ class BeliefPredictor(nn.Module):
 
         return pointgoals
 
+    def cnn_forward_predict_label(self, spectrograms):
+
+        x = self.classifier(spectrograms)
+
+        x1 = x[:, :self.num_objects]
+        x2 = self.sigmoid(x[:, -self.num_regions:])
+        x = torch.cat([x1, x2], dim=1)
+
+        return x
+
     def update(self, observations, dones):
         """
         update the current observations with estimated pointgoal in the agent's current coordinate frame
@@ -196,7 +207,7 @@ class BeliefPredictor(nn.Module):
         if self.predict_label:
             with torch.no_grad():
                 # labels = self.classifier(spectrograms)[:, :21].cpu().numpy()
-                labels = self.classifier(spectrograms)[:, :self.num_objects + self.num_regions].cpu().numpy()
+                labels = self.cnn_forward_predict_label(spectrograms).cpu().numpy()
 
             for i in range(batch_size):
                 label = labels[i]

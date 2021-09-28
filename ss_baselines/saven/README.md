@@ -12,31 +12,31 @@ python ss_baselines/saven/pretraining/vision_model_trainer.py --run-type train
 python ss_baselines/saven/pretraining/audio_model_trainer.py --run-type train
 ```
 
-- Pre-train the `saven` model (using the pre-trained vision and audio model). `Saven` is first trained with the external memory size of 1, which only uses the last observation.
+- Pre-train the `saven` model (using the pre-trained vision and audio model). `Saven` is first trained with the external memory size of 1, which only uses the last observation:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven
 ```
 
-- Evaluate the pre-training process. This will automatically run evaluation on the `test_seen-scenes_heard-sounds` data split for each of the checkpoints found in `data/models/saven/data`. 
+- Evaluate the pre-training process. This will automatically run evaluation on the `test_seen-scenes_heard-sounds` data split for each of the checkpoints found in `data/models/saven/data`:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval EVAL.SPLIT test_seen-scenes_heard-sounds
 ```
-Use the additional flag `--prev-ckpt-ind` to instead specify a starting checkpoint index `n` for the evaluation process, or to resume an evaluation process. 
+Use the additional flag `--prev-ckpt-ind` to instead specify a starting checkpoint index `n` for the evaluation process, or to resume an evaluation process:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --prev-ckpt-ind n --model-dir data/models/saven --run-type eval EVAL.SPLIT test_seen-scenes_heard-sounds
 ```
 
-- Once evaluation is complete, obtain the best checkpoint of the pre-training step and its corresponding metrics. 
+- Once evaluation is complete, obtain the best checkpoint of the pre-training step and its corresponding metrics:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval --eval-best EVAL.SPLIT test_seen-scenes_heard-sounds
 ```
 
-- Train the `saven` model using the best pre-trained checkpoint of pre-training it. Please update the `pretrained_weights` path in `saven.yaml` with the best pre-trained checkpoint when finetuning.:
+- Train the `saven` model using the best pre-trained checkpoint of pre-training it. Please update the `pretrained_weights` path in `saven.yaml` with the best pre-trained checkpoint when finetuning:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven.yaml --model-dir data/models/saven
 ```
 
-- Run the random baselines. There are two random baselines `RandomAgentWithoutStop` and `RandomAgentWithStop`. The former is random baseline that uniformly samples one of three actions (FORWARD, LEFT, RIGHT) and executes stop when the radius distance is less than the specified success distance. The latter samples one of four actions (FORWARD, LEFT, RIGHT, STOP) where STOP has a much lower probability of being selected. 
+- Run the random baselines. There are two random baselines `RandomAgentWithoutStop` and `RandomAgentWithStop`. The former is random baseline that uniformly samples one of three actions (FORWARD, LEFT, RIGHT) and executes stop when the radius distance is less than the specified success distance. The latter samples one of four actions (FORWARD, LEFT, RIGHT, STOP) where STOP has a much lower probability of being selected:
 ```
 python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_wo-stop.yaml
 python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_w-stop.yaml
