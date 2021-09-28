@@ -21,7 +21,7 @@ from ss_baselines.saven.models.visual_cnn import VisualCNN
 from ss_baselines.saven.models.audio_cnn import AudioCNN
 from ss_baselines.saven.models.smt_state_encoder import SMTStateEncoder
 from ss_baselines.saven.models.smt_cnn import SMTCNN, SMTCNN_saven, VisionPredictor
-from ss_baselines.saven.models.gcn import GCN
+from ss_baselines.saven.models.gcn import GCN, DGL_GCN
 
 DUAL_GOAL_DELIMITER = ','
 
@@ -323,8 +323,8 @@ class AudioNavSMTNet(Net):
         # self.visual_encoder = SMTCNN(observation_space)
         self.visual_encoder = SMTCNN_saven(observation_space)
 
-        self.audio_gcn = GCN()
-        self.visual_gcn = GCN()
+        self.audio_gcn = GCN()  # DGL_GCN() GCN()
+        self.visual_gcn = GCN()  # DGL_GCN() GCN()
         self.vision_predictor = VisionPredictor()
 
         if self._use_action_encoding:
