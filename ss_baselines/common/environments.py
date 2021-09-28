@@ -15,10 +15,12 @@ in habitat. Customized environments should be registered using
 
 from typing import Optional, Type
 import logging
-
+import numpy as np
 import habitat
 from habitat import Config, Dataset
 from ss_baselines.common.baseline_registry import baseline_registry
+from habitat.tasks.utils import cartesian_to_polar
+from habitat.utils.geometry_utils import quaternion_rotate_vector
 
 
 def get_env_class(env_name: str) -> Type[habitat.RLEnv]:
