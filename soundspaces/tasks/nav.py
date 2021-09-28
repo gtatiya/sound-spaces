@@ -9,7 +9,7 @@ import logging
 
 import numpy as np
 import torch
-import cv2
+import cv2 
 import librosa
 from gym import spaces
 from skimage.measure import block_reduce

@@ -1,4 +1,4 @@
-BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/pointgoal.yaml"
+BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/objectgoal.yaml"
 TRAINER_NAME: "pointgoal_ppo"
 SENSORS: ["DEPTH_SENSOR"]
 

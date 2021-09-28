@@ -36,7 +36,7 @@ from ss_baselines.common.utils import (
     resize_observation
 )
 from ss_baselines.saven.pointgoal.policy import Seq2SeqPolicy
-from ss_baselines.av_nav.ppo.ppo import PPO
+from ss_baselines.saven.pointgoal.ppo import PPO
 
 
 @baseline_registry.register_trainer(name="pointgoal_ppo")
@@ -202,9 +202,6 @@ class PPOTrainer(BaseRLTrainer):
         masks = torch.tensor(
             [[0.0] if done else [1.0] for done in dones], dtype=torch.float
         )
-        spls = torch.tensor(
-            [[info['spl']] for info in infos]
-        )
 
         # current_episode_reward is accumulating rewards across multiple updates,
         # as long as the current episode is not finished
@@ -323,10 +320,7 @@ class PPOTrainer(BaseRLTrainer):
 
         # episode_rewards and episode_counts accumulates over the entire training course
         current_episode_step = torch.zeros(self.envs.num_envs, 1)
-        
-        current_episode_reward = torch.zeros(
-            self.envs.num_envs, 1
-        )
+        current_episode_reward = torch.zeros(self.envs.num_envs, 1)
         running_episode_stats = dict(
             count=torch.zeros(self.envs.num_envs, 1),
             reward=torch.zeros(self.envs.num_envs, 1),
@@ -374,7 +368,6 @@ class PPOTrainer(BaseRLTrainer):
                 )
                 pth_time += delta_pth_time
 
-                losses = [value_loss, action_loss, dist_entropy]
                 stats_ordering = list(sorted(running_episode_stats.keys()))
                 stats = torch.stack(
                     [running_episode_stats[k] for k in stats_ordering], 0
@@ -405,8 +398,6 @@ class PPOTrainer(BaseRLTrainer):
                             writer.add_scalar(f"Metrics/{metric}", value, count_steps)
                             
                     writer.add_scalar("Metrics/Reward", deltas["reward"] / deltas["count"], count_steps)
-                    # writer.add_scalar("Environment/SPL", deltas["spl"] / deltas["count"], count_steps)
-                    # writer.add_scalar("Environment/Episode_length", deltas["step"] / deltas["count"], count_steps)
                     writer.add_scalar('Policy/Value_Loss', value_loss, count_steps)
                     writer.add_scalar('Policy/Action_Loss', action_loss, count_steps)
                     writer.add_scalar('Policy/Entropy', dist_entropy, count_steps)
@@ -624,6 +615,7 @@ class PPOTrainer(BaseRLTrainer):
                     episode_stats['geodesic_distance'] = current_episodes[i].info['geodesic_distance']
                     episode_stats['euclidean_distance'] = norm(np.array(current_episodes[i].goals[0].position) -
                                                                np.array(current_episodes[i].start_position))
+                    episode_stats['gt_na'] = int(current_episodes[i].info['num_action'])
                     logging.debug(episode_stats)
                     current_episode_reward[i] = 0
                     # use scene_id + episode_id as unique id for storing stats

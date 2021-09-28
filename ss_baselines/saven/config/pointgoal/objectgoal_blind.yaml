@@ -1,9 +1,9 @@
-BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/pointgoal.yaml"
+BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/objectgoal.yaml"
 TRAINER_NAME: "pointgoal_ppo"
-SENSORS: ["DEPTH_SENSOR"]
+SENSORS: []
 
-SIMULATOR_GPU_ID: 1
-TORCH_GPU_ID: 1
+SIMULATOR_GPU_ID: 0
+TORCH_GPU_ID: 0
 NUM_PROCESSES: 4
 NUM_UPDATES: 100000
 
@@ -16,7 +16,7 @@ VISUALIZATION_OPTION: []
 EVAL:
   SPLIT: "test_seen-scenes_heard-sounds"
   USE_CKPT_CONFIG: True
-  
+
 RL:
   PPO:
     # ppo params
