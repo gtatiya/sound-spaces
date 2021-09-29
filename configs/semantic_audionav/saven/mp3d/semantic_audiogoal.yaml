@@ -37,7 +37,7 @@ TASK:
     DRAW_SHORTEST_PATH: True
   DISTANCE_TO_GOAL:
     DISTANCE_TO: VIEW_POINTS
-    
+
 DATASET:
   TYPE: "SemanticAudioNav"
   SPLIT: "train_seen-scenes_heard-sounds"

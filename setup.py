@@ -41,7 +41,8 @@ setup(
         'tensorflow',
         'astropy',
         'scikit-image',
-        'pandas'
+        'pandas',
+        'torchvision'
     ],
     extras_require={
         'test': [
