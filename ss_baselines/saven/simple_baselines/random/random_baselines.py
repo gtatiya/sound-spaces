@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from habitat import Config
 
-def evaluate_agent(config: Config) -> None:
+def evaluate_non_learning_agent(config: Config) -> None:
     splits = config.EVAL.SPLITS
     
     for split in splits:
@@ -41,6 +41,8 @@ def evaluate_agent(config: Config) -> None:
 
         stats = defaultdict(float)
         num_episodes = min(config.EVAL.EPISODE_COUNT, len(env.episodes))
+        logger.info(f"Total episodes: {len(env.episodes)} evaluating: {num_episodes}")
+        
         for i in tqdm(range(num_episodes)):
             obs = env.reset()
             goal = np.array(env.current_episode.goals[0].position)

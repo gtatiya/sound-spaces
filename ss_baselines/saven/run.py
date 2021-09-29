@@ -19,7 +19,9 @@ import torch
 from ss_baselines.common.baseline_registry import baseline_registry
 from ss_baselines.saven.config.default import get_config
 from ss_baselines.saven.ppo.policy import AudioNavSMTNet
-from ss_baselines.saven.random_baselines import evaluate_agent
+from ss_baselines.saven.simple_baselines.random.random_baselines import (
+    evaluate_non_learning_agent
+)
 
 def main():
     parser = argparse.ArgumentParser()
@@ -95,8 +97,9 @@ def main():
     # run exp
     config = get_config(args.exp_config, args.opts, args.model_dir, args.run_type, args.overwrite)
     
+    # this evaluates simple non learning agents
     if args.run_type == "eval" and config.EVAL.EVAL_NONLEARNING:
-        evaluate_agent(config)
+        evaluate_non_learning_agent(config)
         return
     
     trainer_init = baseline_registry.get_trainer(config.TRAINER_NAME)
