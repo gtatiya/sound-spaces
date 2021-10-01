@@ -437,10 +437,11 @@ class AudioNavSMTNet(Net):
 
     def freeze_encoders(self):
         """Freeze goal, visual and fusion encoders. Pose encoder is not frozen."""
-        logging.info(f'AudioNavSMTNet ===> Freezing goal, visual, fusion encoders!')
+        logging.info(f'AudioNavSMTNet ===> Freezing visual_encoder and visual_gcn encoders!')
         params_to_freeze = []
-        params_to_freeze.append(self.goal_encoder.parameters())
+        # params_to_freeze.append(self.goal_encoder.parameters())
         params_to_freeze.append(self.visual_encoder.parameters())
+        params_to_freeze.append(self.visual_gcn.parameters())
         if self._use_action_encoding:
             params_to_freeze.append(self.action_encoder.parameters())
         for p in itertools.chain(*params_to_freeze):
@@ -448,8 +449,9 @@ class AudioNavSMTNet(Net):
 
     def set_eval_encoders(self):
         """Sets the goal, visual and fusion encoders to eval mode."""
-        self.goal_encoder.eval()
+        # self.goal_encoder.eval()
         self.visual_encoder.eval()
+        self.visual_gcn.eval()
 
     def get_features(self, observations, prev_actions):
         x = []

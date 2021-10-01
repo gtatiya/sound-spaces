@@ -17,21 +17,21 @@ python ss_baselines/saven/pretraining/audio_model_trainer.py --run-type train
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven
 ```
 
-- Evaluate the pre-training process. This will automatically run evaluation on the `test_seen-scenes_heard-sounds` data split for each of the checkpoints found in `data/models/saven/data`:
+- Evaluate the pre-training process. This will automatically run evaluation on the `val_seen-scenes_heard-sounds` data split for each of the checkpoints found in `data/models/saven/data`:
 ```
-python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval EVAL.SPLIT test_seen-scenes_heard-sounds
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval EVAL.SPLIT val_seen-scenes_heard-sounds
 ```
 Use the additional flag `--prev-ckpt-ind` to instead specify a starting checkpoint index `n` for the evaluation process, or to resume an evaluation process:
 ```
-python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --prev-ckpt-ind n --model-dir data/models/saven --run-type eval EVAL.SPLIT test_seen-scenes_heard-sounds
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --prev-ckpt-ind n --model-dir data/models/saven --run-type eval EVAL.SPLIT val_seen-scenes_heard-sounds
 ```
 
 - Once evaluation is complete, obtain the best checkpoint of the pre-training step and its corresponding metrics:
 ```
-python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval --eval-best EVAL.SPLIT test_seen-scenes_heard-sounds
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven_pretraining.yaml --model-dir data/models/saven --run-type eval --eval-best EVAL.SPLIT val_seen-scenes_heard-sounds
 ```
 
-- Train the `saven` model using the best pre-trained checkpoint of pre-training it. Please update the `pretrained_weights` path in `saven.yaml` with the best pre-trained checkpoint when finetuning:
+- Train the `saven` model using the best pre-trained checkpoint of pre-training it. Please update the `pretrained_weights` path in [saven.yaml](config/semantic_audionav/saven.yaml) with the best pre-trained checkpoint when finetuning:
 ```
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven.yaml --model-dir data/models/saven
 ```
@@ -43,4 +43,4 @@ python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven
 ```
 
 ## Notes 
- - Modify the parameter `NUM_UPDATES` in the configuration file according to the number of GPUs
+- Modify the parameter `NUM_UPDATES` in the configuration file according to the number of GPUs
