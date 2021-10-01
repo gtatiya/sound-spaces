@@ -1,7 +1,8 @@
 BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/random.yaml"
 EVAL:
+    # this will run the random agent in all val/test splits
     SPLITS: [
-        # train_seen-scenes_heard-sounds
+        val_seen-scenes_heard-sounds
         test_seen-scenes_unheard-sounds, 
         test_unseen-scenes_heard-sounds,
         test_unseen-scenes_unheard-sounds, 

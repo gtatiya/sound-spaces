@@ -15,7 +15,9 @@ VIDEO_OPTION: []
 VISUALIZATION_OPTION: []
 
 EVAL:
-  SPLIT: "test_seen-scenes_heard-sounds"
+  # splits can be:
+  SPLIT: "val_seen-scenes_heard-sounds"
+  # SPLIT: "test_seen-scenes_unheard-sounds"
   # SPLIT: "test_unseen-scenes_heard-sounds"
   # SPLIT: "test_unseen-scenes_unheard-sounds"
   USE_CKPT_CONFIG: True
