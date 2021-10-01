@@ -205,6 +205,7 @@ class AudioNavBaselineNet(Net):
                          (observation_space.spaces['category'].shape[0] if self._label else 0) + \
                          (observation_space.spaces[CategoryBelief.cls_uuid].shape[0] if self._use_label_belief else 0) + \
                          (observation_space.spaces[LocationBelief.cls_uuid].shape[0] if self._use_location_belief else 0)
+        
         if not self._use_mlp_state_encoder:
             self.state_encoder = RNNStateEncoder(rnn_input_size, self._hidden_size)
         else:
