@@ -2,6 +2,7 @@
 
 ## Usage
 
+### SAVEN 
 - Pre-training the vision model:
 ```
 python ss_baselines/saven/pretraining/vision_model_trainer.py --run-type train
@@ -36,11 +37,46 @@ python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic
 python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/semantic_audionav/saven.yaml --model-dir data/models/saven
 ```
 
-- Run the random baselines. There are two random baselines `RandomAgentWithoutStop` and `RandomAgentWithStop`. The former is random baseline that uniformly samples one of three actions (FORWARD, LEFT, RIGHT) and executes stop when the radius distance is less than the specified success distance. The latter samples one of four actions (FORWARD, LEFT, RIGHT, STOP) where STOP has a much lower probability of being selected:
+### Run the Seq2Seq baselines
+This code includes the configuration files, policy and trainer to run six different Seq2Seq baselines:
+- Train PointGoal (RGB + Depth + GPS):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/pointgoal/pointgoal.yaml --model-dir data/models/pointgoal
+```
+- Train ObjectGoal (RGB + Depth + GPS + Semantic Label):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/objectgoal/objectgoal.yaml --model-dir data/models/objectgoal
+```
+- Train AudioPointGoal (Audio + RGB + Depth + GPS):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/audio-pointgoal/audio-pointgoal.yaml --model-dir data/models/audio-pointgoal
+```
+- Train AudioObjectGoal (Audio + RGB + Depth + GPS + Semantic Label):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/audio-objectgoal/audio-objectgoal.yaml --model-dir data/models/audio-objectgoal
+```
+- Train AudioGoal (Audio + RGB + Depth):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/audio-pointgoal/audiogoal.yaml --model-dir data/models/audiogoal
+```
+- Train AudioObjectGoal-NoGPS (Audio + RGB + Depth + Semantic Label):
+```
+python ss_baselines/saven/run.py --exp-config ss_baselines/saven/config/simple_baselines/audio-objectgoal/audio-objectgoal_no-gps.yaml --model-dir data/models/audio-objectgoal_no-gps
+```
+In our paper we report the results obtained using `AudioGoal` and `AudioObjectGoal-NoGPS`.
+
+To evaluate either of the baselines add the flag ```--run-type eval``` and specify the appropriate evaluation split, e.g., ```EVAL.SPLIT val_seen-scenes_heard-sounds```. 
+
+### Run the random baselines
+There are two random baselines `RandomAgentWithoutStop` and `RandomAgentWithStop`. The former is random baseline that uniformly samples one of three actions (FORWARD, LEFT, RIGHT) and executes stop when the radius distance is less than the specified success distance (1 meter): 
 ```
 python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_wo-stop.yaml
+```
+The latter samples one of four actions (FORWARD, LEFT, RIGHT, STOP) where STOP has a much lower probability of being selected:
+```
 python ss_baselines/saven/run.py --run-type eval --exp-config ss_baselines/saven/config/random_agent_w-stop.yaml
 ```
+In our paper we report the results obtained using `RandomAgentWithoutStop`.
 
 ## Notes 
 - Modify the parameter `NUM_UPDATES` in the configuration file according to the number of GPUs
