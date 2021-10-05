@@ -1,7 +1,7 @@
-BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/audio-objectgoal.yaml"
+BASE_TASK_CONFIG_PATH: "configs/semantic_audionav/saven/mp3d/audio-objectgoal_no-gps.yaml"
 TRAINER_NAME: "audiogoal_ppo"
 
-SENSORS: []
+SENSORS: ["RGB_SENSOR", "DEPTH_SENSOR"]
 
 SIMULATOR_GPU_ID: 0
 TORCH_GPU_ID: 0
@@ -21,7 +21,7 @@ EVAL:
   # SPLIT: "test_unseen-scenes_heard-sounds"
   # SPLIT: "test_unseen-scenes_unheard-sounds"
   USE_CKPT_CONFIG: True
-
+  
 RL:
   PPO:
     # ppo params
