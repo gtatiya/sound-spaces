@@ -146,6 +146,7 @@ class AudioGoalNet(Net):
         self._audiogoal = False
         self._pointgoal = False
         self._n_pointgoal = 0
+        self._label = 'category' in observation_space.spaces
 
         if DUAL_GOAL_DELIMITER in self.goal_sensor_uuid:
             goal1_uuid, goal2_uuid = self.goal_sensor_uuid.split(DUAL_GOAL_DELIMITER)
@@ -167,6 +168,7 @@ class AudioGoalNet(Net):
             self.audio_encoder = AudioCNN(observation_space, hidden_size, audiogoal_sensor)
 
         rnn_input_size = (0 if self.is_blind else self._hidden_size) + \
+                         (observation_space.spaces['category'].shape[0] if self._label else 0) + \
                          (self._n_pointgoal if self._pointgoal else 0) + (self._hidden_size if self._audiogoal else 0)
         
         self.state_encoder = RNNStateEncoder(rnn_input_size, self._hidden_size)
@@ -200,10 +202,15 @@ class AudioGoalNet(Net):
 
         if self._pointgoal:
             x.append(observations[self.goal_sensor_uuid.split(DUAL_GOAL_DELIMITER)[0]])
+            
         if self._audiogoal:
             x.append(self.audio_encoder(observations))
+            
         if not self.is_blind:
             x.append(self.visual_encoder(observations))
+            
+        if self._label:
+            x.append(observations['category'].to(device=x[0].device))
 
         x1 = torch.cat(x, dim=1)
         x2, rnn_hidden_states1 = self.state_encoder(x1, rnn_hidden_states, masks)
