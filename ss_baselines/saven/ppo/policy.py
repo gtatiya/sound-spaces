@@ -285,9 +285,9 @@ class AudioNavBaselineNet(Net):
 
 
 class AudioNavSMTNet(Net):
-    r"""Network which passes the input image through CNN and concatenates
-    goal vector with CNN's output and passes that through RNN. Implements the
-    policy from Scene Memory Transformer: https://arxiv.org/abs/1903.03878
+    r"""Network which passes the input image through vision encoder and GCN,
+    sound through audio GCN and location predictor,
+    implements the policy from Scene Memory Transformer: https://arxiv.org/abs/1903.03878
     """
 
     def __init__(
@@ -298,7 +298,8 @@ class AudioNavSMTNet(Net):
         use_pretrained=False,
         pretrained_path='',
         use_belief_as_goal=True,
-        use_label_belief=True,
+        use_audio_gcn=True,
+        use_visual_gcn=True,
         use_location_belief=True,
         use_belief_encoding=False,
         normalize_category_distribution=False,
@@ -309,7 +310,8 @@ class AudioNavSMTNet(Net):
         self._use_action_encoding = True
         self._use_residual_connection = False
         self._use_belief_as_goal = use_belief_as_goal
-        self._use_label_belief = use_label_belief
+        self._use_audio_gcn = use_audio_gcn
+        self._use_visual_gcn = use_visual_gcn
         self._use_location_belief = use_location_belief
         self._hidden_size = hidden_size
         self._action_size = action_space.n
@@ -324,16 +326,21 @@ class AudioNavSMTNet(Net):
         # self.visual_encoder = SMTCNN(observation_space)
         self.visual_encoder = SMTCNN_saven(observation_space)
 
-        self.audio_gcn = GCN()  # DGL_GCN() GCN()
-        self.visual_gcn = GCN()  # DGL_GCN() GCN()
-        self.vision_predictor = VisionPredictor()
+        if self._use_audio_gcn:
+            self.audio_gcn = GCN()  # DGL_GCN() GCN()
+        if self._use_visual_gcn:
+            self.visual_gcn = GCN()  # DGL_GCN() GCN()
+            self.vision_predictor = VisionPredictor()
 
         if self._use_action_encoding:
             self.action_encoder = nn.Linear(self._action_size, 16)
             action_encoding_dims = 16
         else:
             action_encoding_dims = 0
-        nfeats = self.visual_encoder.feature_dims + self.visual_gcn.feature_dims + action_encoding_dims
+        nfeats = self.visual_encoder.feature_dims + action_encoding_dims
+
+        if self._use_visual_gcn:
+            nfeats += self.visual_gcn.feature_dims
 
         if self._use_category_input:
             nfeats += 21
@@ -390,12 +397,10 @@ class AudioNavSMTNet(Net):
 
         if self._use_belief_as_goal:
             belief = torch.zeros((x.shape[0], self._hidden_size), device=x.device)
-            if self._use_label_belief:
+            if self._use_audio_gcn:
                 if self._normalize_category_distribution:
                     belief[:, :21] = nn.functional.softmax(observations[CategoryBelief.cls_uuid], dim=1)
                 else:
-                    # belief[:, :21] = observations[CategoryBelief.cls_uuid]
-
                     obs_cat_belief = observations[CategoryBelief.cls_uuid]
                     audio_gcn_embds = torch.zeros((obs_cat_belief.shape[0], self.audio_gcn.feature_dims), device=x.device)
                     for i in range(len(obs_cat_belief)):
@@ -403,8 +408,7 @@ class AudioNavSMTNet(Net):
                     belief[:, :self.audio_gcn.feature_dims] = audio_gcn_embds
 
             if self._use_location_belief:
-                # belief[:, 21:23] = observations[LocationBelief.cls_uuid]
-                belief[:, self.audio_gcn.feature_dims:self.audio_gcn.feature_dims+2] = observations[LocationBelief.cls_uuid]
+                belief[:, self._hidden_size-2:self._hidden_size] = observations[LocationBelief.cls_uuid]
 
             if self._use_belief_encoder:
                 belief = self.belief_encoder(belief)
@@ -441,7 +445,8 @@ class AudioNavSMTNet(Net):
         params_to_freeze = []
         # params_to_freeze.append(self.goal_encoder.parameters())
         params_to_freeze.append(self.visual_encoder.parameters())
-        params_to_freeze.append(self.visual_gcn.parameters())
+        if self._use_visual_gcn:
+            params_to_freeze.append(self.visual_gcn.parameters())
         if self._use_action_encoding:
             params_to_freeze.append(self.action_encoder.parameters())
         for p in itertools.chain(*params_to_freeze):
@@ -451,7 +456,8 @@ class AudioNavSMTNet(Net):
         """Sets the goal, visual and fusion encoders to eval mode."""
         # self.goal_encoder.eval()
         self.visual_encoder.eval()
-        self.visual_gcn.eval()
+        if self._use_visual_gcn:
+            self.visual_gcn.eval()
 
     def get_features(self, observations, prev_actions):
         x = []
@@ -459,11 +465,12 @@ class AudioNavSMTNet(Net):
         x.append(self.action_encoder(self._get_one_hot(prev_actions)))
         # x.append(self.goal_encoder(observations))
 
-        obs_cat_predicts = self.vision_predictor(observations)
-        visual_gcn_embds = torch.zeros((obs_cat_predicts.shape[0], self.visual_gcn.feature_dims), device=prev_actions.device)
-        for i in range(len(obs_cat_predicts)):
-            visual_gcn_embds[i, :] = self.visual_gcn(obs_cat_predicts[i])
-        x.append(visual_gcn_embds)
+        if self._use_visual_gcn:
+            obs_cat_predicts = self.vision_predictor(observations)
+            visual_gcn_embds = torch.zeros((obs_cat_predicts.shape[0], self.visual_gcn.feature_dims), device=prev_actions.device)
+            for i in range(len(obs_cat_predicts)):
+                visual_gcn_embds[i, :] = self.visual_gcn(obs_cat_predicts[i])
+            x.append(visual_gcn_embds)
 
         if self._use_category_input:
             x.append(observations[Category.cls_uuid])

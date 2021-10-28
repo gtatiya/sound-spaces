@@ -62,7 +62,7 @@ class BeliefPredictor(nn.Module):
         super(BeliefPredictor, self).__init__()
         self.config = belief_config
         self.device = device
-        self.predict_label = belief_config.use_label_belief
+        self.predict_label = belief_config.use_audio_gcn
         self.predict_location = belief_config.use_location_belief
         self.has_distractor_sound = has_distractor_sound
 
@@ -125,17 +125,17 @@ class BeliefPredictor(nn.Module):
     def freeze_encoders(self):
         if self.config.online_training:
             # online training is only for location predictor
-            if self.config.use_label_belief:
+            if self.config.use_audio_gcn:
                 for param in self.classifier.parameters():
                     param.requires_grad = False
         else:
-            if self.config.use_label_belief or self.config.use_location_belief:
+            if self.config.use_audio_gcn or self.config.use_location_belief:
                 for param in self.parameters():
                     param.requires_grad = False
         logging.info("Freezing belief predictor weights")
 
     def set_eval_encoders(self):
-        if self.config.use_label_belief:
+        if self.config.use_audio_gcn:
             self.classifier.eval()
         if self.config.use_location_belief:
             self.predictor.eval()

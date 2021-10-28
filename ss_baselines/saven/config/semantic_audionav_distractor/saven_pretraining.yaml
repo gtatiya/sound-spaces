@@ -48,11 +48,12 @@ RL:
       pretrained_path: ''
       freeze_encoders: False
       pretraining: True
+      use_visual_gcn: True
     BELIEF_PREDICTOR:
       online_training: True
       train_encoder: False
       lr: 1e-3
-      use_label_belief: True
+      use_audio_gcn: True
       use_location_belief: True
   DDPPO:
     sync_frac: 0.6

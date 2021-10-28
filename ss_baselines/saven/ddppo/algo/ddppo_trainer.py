@@ -9,6 +9,7 @@
 import contextlib
 import os
 import random
+import subprocess
 import time
 from collections import defaultdict, deque
 
@@ -38,6 +39,39 @@ from ss_baselines.saven.ddppo.algo.ddppo import DDPPO
 from ss_baselines.saven.models.belief_predictor import BeliefPredictor, BeliefPredictorDDP
 from ss_baselines.saven.ppo.ppo_trainer import PPOTrainer
 from ss_baselines.saven.ppo.policy import AudioNavSMTPolicy, AudioNavBaselinePolicy
+
+
+def get_gpu_memory_map(max_memory_used_percent=0.8):
+    """Get the current gpu usage if used memory is less than max_memory_used_percent
+
+    Returns
+    -------
+    usage: dict
+        Keys are device ids as integers.
+        Values are memory usage as integers in MB.
+    """
+    memory_used = subprocess.check_output(
+        [
+            'nvidia-smi', '--query-gpu=memory.used',
+            '--format=csv,nounits,noheader'
+        ], encoding='utf-8')
+    memory_total = subprocess.check_output(
+        [
+            'nvidia-smi', '--query-gpu=memory.total',
+            '--format=csv,nounits,noheader'
+        ], encoding='utf-8')
+    memory_used = np.array([int(x) for x in memory_used.strip().split('\n')])
+    memory_total = np.array([int(x) for x in memory_total.strip().split('\n')])
+
+    memory_used_percent = memory_used/memory_total
+    logger.info("{} GPU usage: {}".format(len(memory_used_percent), [round(m, 2) for m in memory_used_percent]))
+
+    gpu_memory_map = {}
+    for gpu_id in range(len(memory_used)):
+        if memory_used_percent[gpu_id] < max_memory_used_percent:
+            gpu_memory_map[gpu_id] = memory_used[gpu_id]
+
+    return gpu_memory_map
 
 
 @baseline_registry.register_trainer(name="ddppo")
@@ -113,7 +147,8 @@ class DDPPOTrainer(PPOTrainer):
                 pretraining=smt_cfg.pretraining,
                 use_belief_encoding=smt_cfg.use_belief_encoding,
                 use_belief_as_goal=ppo_cfg.use_belief_predictor,
-                use_label_belief=belief_cfg.use_label_belief,
+                use_audio_gcn=belief_cfg.use_audio_gcn,
+                use_visual_gcn=smt_cfg.use_visual_gcn,
                 use_location_belief=belief_cfg.use_location_belief,
                 normalize_category_distribution=belief_cfg.normalize_category_distribution,
                 use_category_input=has_distractor_sound
@@ -193,9 +228,9 @@ class DDPPOTrainer(PPOTrainer):
         Returns:
             None
         """
-        self.local_rank, tcp_store = init_distrib_slurm(
-            self.config.RL.DDPPO.distrib_backend
-        )
+        get_gpu_memory_map()
+
+        self.local_rank, tcp_store = init_distrib_slurm(self.config.RL.DDPPO.distrib_backend)
         add_signal_handlers()
 
         # Stores the number of workers that have finished their rollout
@@ -503,6 +538,8 @@ class DDPPOTrainer(PPOTrainer):
                                 / ((time.time() - t_start) + prev_time),
                             )
                         )
+
+                        get_gpu_memory_map()
 
                         logger.info(
                             "update: {}\tenv-time: {:.3f}s\tpth-time: {:.3f}s\t"

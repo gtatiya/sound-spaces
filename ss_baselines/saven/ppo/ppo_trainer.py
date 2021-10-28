@@ -112,7 +112,7 @@ class PPOTrainer(BaseRLTrainer):
                 use_pretrained=smt_cfg.use_pretrained,
                 pretrained_path=smt_cfg.pretrained_path,
                 use_belief_as_goal=ppo_cfg.use_belief_predictor,
-                use_label_belief=smt_cfg.use_label_belief,
+                use_audio_gcn=smt_cfg.use_audio_gcn,
                 use_location_belief=smt_cfg.use_location_belief
             )
 
