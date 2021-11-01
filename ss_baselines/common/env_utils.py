@@ -37,7 +37,6 @@ def construct_envs(
     Returns:
         VectorEnv object created according to specification.
     """
-
     num_processes = config.NUM_PROCESSES
     configs = []
     env_classes = [env_class for _ in range(num_processes)]
@@ -83,7 +82,7 @@ def construct_envs(
         config.TASK_CONFIG = task_config
         config.freeze()
         configs.append(config.clone())
-
+    import pdb;pdb.set_trace()
     # use VectorEnv for the best performance and ThreadedVectorEnv for debugging
     if config.USE_SYNC_VECENV:
         env_launcher = SyncVectorEnv

@@ -10,7 +10,8 @@ SIMULATOR:
     WIDTH: 128
     HEIGHT: 128
 
-  TYPE: "SoundSpacesSim"
+  # TYPE: "SoundSpacesSim"
+  TYPE: "SpacesSim"
   ACTION_SPACE_CONFIG: "v0"
   SCENE_DATASET: "mp3d"
   AUDIO:
